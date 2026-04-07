@@ -33,7 +33,7 @@
   .site-logo { font-family: 'DM Serif Display', serif; font-size: 22px; color: #F8FAFC; }
   .site-logo span { color: var(--gold); }
   .site-tagline { font-size: 11px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 3px; }
-  .header-actions { display: flex; align-items: center; gap: 10px; }
+  .header-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
   .btn { font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; padding: 8px 18px; border-radius: 6px; cursor: pointer; border: none; transition: all 0.15s; }
   .btn-ghost { background: transparent; border: 1px solid rgba(248,250,252,0.25); color: #F8FAFC; }
@@ -118,10 +118,10 @@
 
   .detail-tag { display: inline-block; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; padding: 4px 10px; border-radius: 20px; margin-bottom: 4px; }
   .source-badge { font-size: 10px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; padding: 2px 7px; border-radius: 3px; margin-left: 6px; vertical-align: middle; }
-  .badge-eb { background: #FF6A3C; color: white; }
-  .badge-tm { background: #026CDF; color: white; }
-  .badge-phq { background: var(--blue); color: white; }
-  .badge-ai { background: var(--teal); color: white; }
+  .badge-eb   { background: #FF6A3C; color: white; }
+  .badge-tm   { background: #026CDF; color: white; }
+  .badge-phq  { background: var(--blue); color: white; }
+  .badge-ai   { background: var(--teal); color: white; }
   .badge-mine { background: var(--gold); color: var(--ink); }
   .detail-title { font-family: 'DM Serif Display', serif; font-size: 22px; line-height: 1.2; margin-bottom: 8px; margin-top: 6px; color: var(--ink); }
   .detail-meta { font-size: 13px; color: var(--muted); margin-bottom: 6px; display: flex; align-items: flex-start; gap: 7px; }
@@ -130,6 +130,9 @@
   .detail-link { display: inline-block; margin-top: 12px; font-size: 13px; font-weight: 500; color: var(--teal); text-decoration: none; }
   .detail-link:hover { text-decoration: underline; }
   .traffic-banner { background: var(--gold-light); border: 1px solid rgba(201,146,42,0.3); border-radius: 6px; padding: 8px 12px; margin-bottom: 12px; font-size: 12px; color: #92400E; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+
+  .sync-badge { font-size: 11px; color: var(--teal); font-weight: 500; display: flex; align-items: center; gap: 4px; }
+  .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--teal); }
 
   @media (max-width: 768px) {
     .site-header, .controls, .cal-outer, .status-bar { padding-left: 1rem; padding-right: 1rem; }
@@ -145,10 +148,12 @@
     <div class="site-tagline">Tulsa Events &amp; Traffic Calendar</div>
   </div>
   <div class="header-actions">
+    <div class="sync-badge" id="syncBadge" style="display:none"><div class="sync-dot"></div>Live sync</div>
     <button class="btn btn-ghost" onclick="openAddModal()">+ Add Event</button>
     <button class="btn btn-teal" id="fetchBtn" onclick="fetchAllEvents()">&#8595; Fetch Events</button>
   </div>
 </header>
+
 <div class="controls">
   <div class="month-nav">
     <button class="nav-arrow" onclick="changeMonth(-1)">&#8249;</button>
@@ -165,6 +170,7 @@
     <button class="chip" data-f="mine"   onclick="setFilter('mine',this)">My Events</button>
   </div>
 </div>
+
 <div class="cal-outer">
   <div class="cal-inner">
     <div class="day-labels">
@@ -174,9 +180,10 @@
     <div class="cal-grid" id="calGrid"></div>
   </div>
 </div>
+
 <div class="status-bar">
   <div id="spinner" class="spinner" style="display:none"></div>
-  <span id="statusMsg">Ready — click "Fetch Events" to load Eventbrite, Ticketmaster &amp; PredictHQ events for Tulsa.</span>
+  <span id="statusMsg">Loading calendar...</span>
   <div class="source-tally">
     <div class="tally-item"><span style="width:8px;height:8px;border-radius:50%;background:#FF6A3C;display:inline-block"></span>&nbsp;EB: <strong id="tallyEB">0</strong></div>
     <div class="tally-item"><span style="width:8px;height:8px;border-radius:50%;background:#026CDF;display:inline-block"></span>&nbsp;TM: <strong id="tallyTM">0</strong></div>
@@ -184,6 +191,7 @@
     <div class="tally-item"><span style="width:8px;height:8px;border-radius:50%;background:#0D9488;display:inline-block"></span>&nbsp;AI: <strong id="tallyAI">0</strong></div>
   </div>
 </div>
+
 <div class="modal-overlay" id="addModal" style="display:none" onclick="if(event.target===this)closeAddModal()">
   <div class="modal-box">
     <div class="modal-head"><div class="modal-title">Add Event</div><button class="modal-close" onclick="closeAddModal()">&#10005;</button></div>
@@ -193,7 +201,15 @@
         <div class="field"><label>Date</label><input type="date" id="addDate" /></div>
         <div class="field"><label>Time</label><input type="time" id="addTime" /></div>
       </div>
-      <div class="field"><label>Category</label><select id="addCat"><option value="mine">My Event</option><option value="arts">Concert / Show</option><option value="sports">Sports</option><option value="conv">Convention / Expo</option><option value="food">Food &amp; Drink</option></select></div>
+      <div class="field"><label>Category</label>
+        <select id="addCat">
+          <option value="mine">My Event</option>
+          <option value="arts">Concert / Show</option>
+          <option value="sports">Sports</option>
+          <option value="conv">Convention / Expo</option>
+          <option value="food">Food &amp; Drink</option>
+        </select>
+      </div>
       <div class="field"><label>Venue / Location</label><input type="text" id="addLoc" placeholder="e.g. Cox Convention Center" /></div>
       <div class="field"><label>Estimated attendance</label><input type="text" id="addAtt" placeholder="e.g. 5,000" /></div>
       <div class="field"><label>Notes / Promo ideas</label><textarea id="addNotes" placeholder="Special menu ideas, target demographic, promo opportunities..."></textarea></div>
@@ -201,6 +217,7 @@
     <div class="modal-foot"><button class="btn btn-ghost-dark" onclick="closeAddModal()">Cancel</button><button class="btn btn-gold" onclick="saveEvent()">Save Event</button></div>
   </div>
 </div>
+
 <div class="modal-overlay" id="detailModal" style="display:none" onclick="if(event.target===this)closeDetail()">
   <div class="modal-box">
     <div class="modal-head"><div class="modal-title">Event Details</div><button class="modal-close" onclick="closeDetail()">&#10005;</button></div>
@@ -208,14 +225,99 @@
     <div class="modal-foot" id="detailFoot"></div>
   </div>
 </div>
+
 <script>
-const EB_KEY='MWSGIEOMO6J3JR5CHZ6G',TM_KEY='BlTjhuTQB49rAti4GdPq81YK4CJQGYiH',PHQ_KEY='7HqGagbd1SAyCBn6jGbjzzLSh11L5f1RFwaGmCb6',CORS='https://corsproxy.io/?';
-const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
-const today=new Date();
-let curYear=today.getFullYear(),curMonth=today.getMonth(),activeFilter='all',activeDetailId=null,events=[],tallies={eb:0,tm:0,phq:0,ai:0};
+// ── CONFIG ──
+const SB_URL  = 'https://svmwifhftylbidsargft.supabase.co';
+const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN2bXdpZmhmdHlsYmlkc2FyZ2Z0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODYwMDAsImV4cCI6MjA5MTE2MjAwMH0.6ZLjZ7ky5PbZRTVohxlfwHh_WQTRigRtp2xzexmt4kg';
+const TM_KEY  = 'BlTjhuTQB49rAti4GdPq81YK4CJQGYiH';
+const PHQ_KEY = '7HqGagbd1SAyCBn6jGbjzzLSh11L5f1RFwaGmCb6';
+const CORS    = 'https://corsproxy.io/?';
+
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const today  = new Date();
+let curYear  = today.getFullYear();
+let curMonth = today.getMonth();
+let activeFilter = 'all';
+let activeDetailId = null;
+let events = [];
+let tallies = {eb:0,tm:0,phq:0,ai:0};
+
 function fmtDate(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function uid(){return '_'+Math.random().toString(36).slice(2,10);}
 function isDupe(n,d){return events.some(e=>e.name.toLowerCase().trim()===n.toLowerCase().trim()&&e.date===d);}
+
+// ── SUPABASE ──
+async function sbFetch(path, opts={}) {
+  const res = await fetch(SB_URL + path, {
+    ...opts,
+    headers: {
+      'apikey': SB_KEY,
+      'Authorization': 'Bearer ' + SB_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=minimal',
+      ...(opts.headers||{})
+    }
+  });
+  if (!res.ok && res.status !== 204) {
+    const err = await res.text();
+    throw new Error('Supabase error: ' + err);
+  }
+  if (res.status === 204) return null;
+  return res.json();
+}
+
+async function loadFromSupabase() {
+  try {
+    const data = await sbFetch('/rest/v1/events?select=*&order=date.asc');
+    events = data || [];
+    document.getElementById('syncBadge').style.display = 'flex';
+    return true;
+  } catch(e) {
+    console.error('Supabase load error:', e);
+    return false;
+  }
+}
+
+async function saveToSupabase(ev) {
+  try {
+    await sbFetch('/rest/v1/events', {
+      method: 'POST',
+      body: JSON.stringify(ev)
+    });
+    return true;
+  } catch(e) {
+    console.error('Supabase save error:', e);
+    return false;
+  }
+}
+
+async function deleteFromSupabase(id) {
+  try {
+    await sbFetch('/rest/v1/events?id=eq.' + encodeURIComponent(id), {
+      method: 'DELETE'
+    });
+    return true;
+  } catch(e) {
+    console.error('Supabase delete error:', e);
+    return false;
+  }
+}
+
+async function saveManyToSupabase(evtArray) {
+  if (!evtArray.length) return;
+  try {
+    await sbFetch('/rest/v1/events', {
+      method: 'POST',
+      headers: { 'Prefer': 'resolution=ignore-duplicates,return=minimal' },
+      body: JSON.stringify(evtArray)
+    });
+  } catch(e) {
+    console.error('Supabase bulk save error:', e);
+  }
+}
+
+// ── CATEGORY ──
 function guessCategory(name,desc,phqCat){
   if(phqCat){const p=phqCat.toLowerCase();if(/concert|music|perform|festival/.test(p))return'arts';if(/sport|game|match|race|marathon/.test(p))return'sports';if(/conference|convention|expo|trade|seminar|academic/.test(p))return'conv';if(/food|drink/.test(p))return'food';}
   const t=(name+' '+(desc||'')).toLowerCase();
@@ -229,11 +331,15 @@ function pillClass(c){return{mine:'pill-mine',food:'pill-food',arts:'pill-arts',
 function tagStyle(c){return{mine:'background:#FEF3C7;color:#92400E',food:'background:#FEF3C7;color:#92400E',arts:'background:#CCFBF1;color:#0F766E',sports:'background:#E0EAF4;color:#2A6496',conv:'background:#DBEAFE;color:#1E3A5F'}[c]||'background:#E2E8F0;color:#334155';}
 function catLabel(c){return{mine:'My Event',food:'Food & Drink',arts:'Concert / Show',sports:'Sports',conv:'Convention / Expo',community:'Community'}[c]||'Event';}
 function srcBadge(s){return{eventbrite:'<span class="source-badge badge-eb">Eventbrite</span>',ticketmaster:'<span class="source-badge badge-tm">Ticketmaster</span>',predicthq:'<span class="source-badge badge-phq">PredictHQ</span>',ai:'<span class="source-badge badge-ai">AI Search</span>'}[s]||'<span class="source-badge badge-mine">My Event</span>';}
+
+// ── FILTER / NAV ──
 function setFilter(f,el){activeFilter=f;document.querySelectorAll('.chip').forEach(c=>{c.className='chip';if(c.dataset.f===f)c.classList.add('active-'+f);});renderCal();}
 function visibleEvts(ds){return events.filter(e=>{if(e.date!==ds)return false;if(activeFilter==='all')return true;if(activeFilter==='mine')return e.source==='mine';return e.cat===activeFilter;});}
 function isHighTraffic(ds){const e=events.filter(x=>x.date===ds);return e.length>=3||e.some(x=>x.attendance>=1000);}
 function changeMonth(d){curMonth+=d;if(curMonth>11){curMonth=0;curYear++;}if(curMonth<0){curMonth=11;curYear--;}renderCal();}
 function goToday(){curYear=today.getFullYear();curMonth=today.getMonth();renderCal();}
+
+// ── RENDER ──
 function renderCal(){
   document.getElementById('monthDisplay').textContent=MONTHS[curMonth]+' '+curYear;
   const grid=document.getElementById('calGrid');grid.innerHTML='';
@@ -255,8 +361,12 @@ function makeCell(dt,other,ts){
   if(evts.length>3){const m=document.createElement('div');m.className='more-link';m.textContent='+'+(evts.length-3)+' more';m.onclick=e=>{e.stopPropagation();openDetail(evts[3].id);};cell.appendChild(m);}
   return cell;
 }
+
+// ── STATUS ──
 function setStatus(m,l){document.getElementById('statusMsg').textContent=m;document.getElementById('spinner').style.display=l?'block':'none';}
 function updateTallies(){document.getElementById('tallyEB').textContent=tallies.eb;document.getElementById('tallyTM').textContent=tallies.tm;document.getElementById('tallyPHQ').textContent=tallies.phq;document.getElementById('tallyAI').textContent=tallies.ai;}
+
+// ── ADD MODAL ──
 function openAddModal(pre){
   document.getElementById('addName').value='';document.getElementById('addDate').value=pre||fmtDate(today);
   document.getElementById('addTime').value='';document.getElementById('addCat').value='mine';
@@ -264,13 +374,20 @@ function openAddModal(pre){
   document.getElementById('addModal').style.display='flex';
 }
 function closeAddModal(){document.getElementById('addModal').style.display='none';}
-function saveEvent(){
+
+async function saveEvent(){
   const name=document.getElementById('addName').value.trim(),date=document.getElementById('addDate').value;
   if(!name||!date){alert('Please enter an event name and date.');return;}
   const att=parseInt(document.getElementById('addAtt').value.replace(/\D/g,''))||0;
-  events.push({id:uid(),name,date,time:document.getElementById('addTime').value,cat:document.getElementById('addCat').value,loc:document.getElementById('addLoc').value.trim(),notes:document.getElementById('addNotes').value.trim(),source:'mine',url:'',attendance:att});
-  closeAddModal();renderCal();setStatus('Event added: '+name,false);
+  const ev={id:uid(),name,date,time:document.getElementById('addTime').value,cat:document.getElementById('addCat').value,loc:document.getElementById('addLoc').value.trim(),notes:document.getElementById('addNotes').value.trim(),source:'mine',url:'',attendance:att};
+  setStatus('Saving event...',true);
+  const saved = await saveToSupabase(ev);
+  if(saved){events.push(ev);setStatus('Event saved and synced: '+name,false);}
+  else{events.push(ev);setStatus('Event saved locally (sync failed)',false);}
+  closeAddModal();renderCal();
 }
+
+// ── DETAIL MODAL ──
 function openDetail(id){
   const ev=events.find(e=>e.id===id);if(!ev)return;activeDetailId=id;
   const dateObj=new Date(ev.date+'T12:00:00');
@@ -279,54 +396,93 @@ function openDetail(id){
   const allOnDay=events.filter(e=>e.date===ev.date).length;
   const traf=allOnDay>=3?`<div class="traffic-banner">&#9733; High-traffic day — ${allOnDay} events in Tulsa. Consider targeted dining promotions.</div>`:ev.attendance>=1000?`<div class="traffic-banner">&#9733; Est. ${Number(ev.attendance).toLocaleString()} attendees — good opportunity for dining promotions.</div>`:'';
   document.getElementById('detailBody').innerHTML=`${traf}<div style="margin-bottom:6px"><span class="detail-tag" style="${tagStyle(ev.cat)}">${catLabel(ev.cat)}</span>${srcBadge(ev.source)}</div><div class="detail-title">${ev.name}</div><div class="detail-meta"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>${dateStr}${timeStr}</div>${ev.loc?`<div class="detail-meta"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7c0 5.25-7 13-7 13S5 14.25 5 9a7 7 0 0 1 7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>${ev.loc}</div>`:''}${ev.attendance?`<div class="detail-meta"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>Est. ${Number(ev.attendance).toLocaleString()} attendees</div>`:''}${ev.notes?`<div class="detail-notes">${ev.notes}</div>`:''}${ev.url?`<a href="${ev.url}" target="_blank" class="detail-link">View tickets &#8599;</a>`:''}`;
-  document.getElementById('detailFoot').innerHTML=ev.source==='mine'?`<button class="btn-danger" onclick="deleteEvt()">Remove</button><button class="btn btn-ghost-dark" style="margin-left:auto" onclick="closeDetail()">Close</button>`:`<button class="btn btn-ghost-dark" style="margin-left:auto" onclick="closeDetail()">Close</button>`;
+  const isOwned=ev.source==='mine';
+  document.getElementById('detailFoot').innerHTML=isOwned?`<button class="btn-danger" onclick="deleteEvt()">Remove</button><button class="btn btn-ghost-dark" style="margin-left:auto" onclick="closeDetail()">Close</button>`:`<button class="btn btn-ghost-dark" style="margin-left:auto" onclick="closeDetail()">Close</button>`;
   document.getElementById('detailModal').style.display='flex';
 }
 function closeDetail(){document.getElementById('detailModal').style.display='none';activeDetailId=null;}
-function deleteEvt(){if(!activeDetailId)return;events=events.filter(e=>e.id!==activeDetailId);closeDetail();renderCal();}
-function formatTime(t){if(!t)return'';const[h,m]=t.split(':').map(Number);return(h%12||12)+':'+String(m).padStart(2,'0')+' '+(h>=12?'PM':'AM');}
-async function fetchEventbrite(){
-  const s=new Date(curYear,curMonth,1).toISOString().replace('.000',''),e=new Date(curYear,curMonth+1,0,23,59).toISOString().replace('.000','');
-  const res=await fetch(CORS+encodeURIComponent(`https://www.eventbriteapi.com/v3/events/search/?location.address=Tulsa%2C%20OK&location.within=30mi&start_date.range_start=${s}&start_date.range_end=${e}&expand=venue&page_size=50&token=${EB_KEY}`));
-  const data=await res.json();if(!data.events)return 0;let added=0;
-  data.events.forEach(ev=>{const dt=ev.start?.local||'',date=dt.slice(0,10),time=dt.slice(11,16);if(!date||isDupe(ev.name.text,date))return;const loc=ev.venue?(ev.venue.name||ev.venue.address?.localized_address_display||'Tulsa, OK'):'Tulsa, OK';events.push({id:uid(),name:ev.name.text,date,time,cat:guessCategory(ev.name.text,ev.description?.text,null),loc,notes:ev.description?.text?.slice(0,300)||'',source:'eventbrite',url:ev.url||'',attendance:ev.capacity||0});added++;});
-  return added;
+async function deleteEvt(){
+  if(!activeDetailId)return;
+  await deleteFromSupabase(activeDetailId);
+  events=events.filter(e=>e.id!==activeDetailId);
+  closeDetail();renderCal();
+  setStatus('Event removed.',false);
 }
+function formatTime(t){if(!t)return'';const[h,m]=t.split(':').map(Number);return(h%12||12)+':'+String(m).padStart(2,'0')+' '+(h>=12?'PM':'AM');}
+
+// ── API FETCHERS ──
 async function fetchTicketmaster(){
   const s=new Date(curYear,curMonth,1).toISOString().slice(0,19)+'Z',e=new Date(curYear,curMonth+1,0,23,59).toISOString().slice(0,19)+'Z';
   const res=await fetch(CORS+encodeURIComponent(`https://app.ticketmaster.com/discovery/v2/events.json?city=Tulsa&stateCode=OK&startDateTime=${s}&endDateTime=${e}&size=50&apikey=${TM_KEY}`));
-  const data=await res.json();const evts=data._embedded?.events;if(!evts)return 0;let added=0;
-  evts.forEach(ev=>{const date=ev.dates?.start?.localDate||'',time=ev.dates?.start?.localTime?.slice(0,5)||'';if(!date||isDupe(ev.name,date))return;const venue=ev._embedded?.venues?.[0];const loc=venue?venue.name+(venue.city?.name?', '+venue.city.name:''):'Tulsa, OK';events.push({id:uid(),name:ev.name,date,time,cat:guessCategory(ev.name,'',ev.classifications?.[0]?.segment?.name||''),loc,notes:'',source:'ticketmaster',url:ev.url||'',attendance:5000});added++;});
-  return added;
+  const data=await res.json();const evts=data._embedded?.events;if(!evts)return[];
+  return evts.filter(ev=>{const date=ev.dates?.start?.localDate;return date&&!isDupe(ev.name,date);}).map(ev=>{
+    const date=ev.dates.start.localDate,time=ev.dates.start.localTime?.slice(0,5)||'';
+    const venue=ev._embedded?.venues?.[0];const loc=venue?venue.name+(venue.city?.name?', '+venue.city.name:''):'Tulsa, OK';
+    return{id:uid(),name:ev.name,date,time,cat:guessCategory(ev.name,'',ev.classifications?.[0]?.segment?.name||''),loc,notes:'',source:'ticketmaster',url:ev.url||'',attendance:5000};
+  });
 }
+
 async function fetchPredictHQ(){
   const s=new Date(curYear,curMonth,1).toISOString().slice(0,10),e=new Date(curYear,curMonth+1,0).toISOString().slice(0,10);
   const res=await fetch(CORS+encodeURIComponent(`https://api.predicthq.com/v1/events/?country=US&location_around.origin=36.1540,-95.9928&location_around.offset=30mi&start.gte=${s}&start.lte=${e}&limit=100&category=concerts,conferences,expos,festivals,performing-arts,sports,community,observances`),{headers:{'Authorization':'Bearer '+PHQ_KEY,'Accept':'application/json'}});
-  const data=await res.json();if(!data.results)return 0;let added=0;
-  data.results.forEach(ev=>{const date=ev.start?.slice(0,10)||'',time=ev.start?.slice(11,16)||'';if(!date||isDupe(ev.title,date))return;const loc=ev.entities?.find(e=>e.type==='venue')?.name||'Tulsa, OK';events.push({id:uid(),name:ev.title,date,time,cat:guessCategory(ev.title,ev.description,ev.category),loc,notes:ev.description?.slice(0,300)||'',source:'predicthq',url:'',attendance:ev.phq_attendance||0});added++;});
-  return added;
+  const data=await res.json();if(!data.results)return[];
+  return data.results.filter(ev=>ev.start?.slice(0,10)&&!isDupe(ev.title,ev.start.slice(0,10))).map(ev=>{
+    const date=ev.start.slice(0,10),time=ev.start.slice(11,16)||'';
+    const loc=ev.entities?.find(e=>e.type==='venue')?.name||'Tulsa, OK';
+    return{id:uid(),name:ev.title,date,time,cat:guessCategory(ev.title,ev.description,ev.category),loc,notes:ev.description?.slice(0,300)||'',source:'predicthq',url:'',attendance:ev.phq_attendance||0};
+  });
 }
+
 async function fetchAIEvents(){
-  const prompt=`Search for upcoming events in Tulsa, Oklahoma in ${MONTHS[curMonth]} ${curYear} that bring large crowds. Focus on: Cox Convention Center events, trade shows, consumer expos, University of Tulsa events, OSU-Tulsa events, rodeos, air shows, state championship tournaments, major festivals, large community gatherings. Return ONLY a valid JSON array (no markdown): [{"name":"...","date":"${curYear}-${String(curMonth+1).padStart(2,'0')}-DD","time":"HH:MM","cat":"arts|sports|conv|food|community","loc":"venue","notes":"brief description","attendance":5000}]. Only return the JSON array.`;
+  const prompt=`Search for upcoming events in Tulsa, Oklahoma in ${MONTHS[curMonth]} ${curYear} that bring large crowds. Focus on: Cox Convention Center events, trade shows, consumer expos, University of Tulsa events, OSU-Tulsa events, rodeos, air shows, state championship tournaments, major festivals. Return ONLY a valid JSON array (no markdown): [{"name":"...","date":"${curYear}-${String(curMonth+1).padStart(2,'0')}-DD","time":"HH:MM","cat":"arts|sports|conv|food|community","loc":"venue","notes":"brief description","attendance":5000}]. Only return the JSON array.`;
   const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,tools:[{type:'web_search_20250305',name:'web_search'}],messages:[{role:'user',content:prompt}]})});
-  const data=await res.json();const raw=data.content?.find(b=>b.type==='text')?.text||'';const match=raw.match(/\[[\s\S]*?\]/);if(!match)return 0;
-  let parsed=[];try{parsed=JSON.parse(match[0]);}catch{return 0;}let added=0;
-  parsed.forEach(ev=>{if(!ev.name||!ev.date||isDupe(ev.name,ev.date))return;events.push({id:uid(),name:ev.name,date:ev.date,time:ev.time||'',cat:ev.cat||'community',loc:ev.loc||'Tulsa, OK',notes:ev.notes||'',source:'ai',url:'',attendance:ev.attendance||0});added++;});
-  return added;
+  const data=await res.json();const raw=data.content?.find(b=>b.type==='text')?.text||'';
+  const match=raw.match(/\[[\s\S]*?\]/);if(!match)return[];
+  let parsed=[];try{parsed=JSON.parse(match[0]);}catch{return[];}
+  return parsed.filter(ev=>ev.name&&ev.date&&!isDupe(ev.name,ev.date)).map(ev=>({id:uid(),name:ev.name,date:ev.date,time:ev.time||'',cat:ev.cat||'community',loc:ev.loc||'Tulsa, OK',notes:ev.notes||'',source:'ai',url:'',attendance:ev.attendance||0}));
 }
+
+// ── FETCH ALL ──
 async function fetchAllEvents(){
   const btn=document.getElementById('fetchBtn');btn.disabled=true;btn.textContent='Fetching...';
   tallies={eb:0,tm:0,phq:0,ai:0};updateTallies();
-  setStatus('Fetching Eventbrite events...',true);try{tallies.eb=await fetchEventbrite();}catch(e){console.error(e);}updateTallies();
-  setStatus('Fetching Ticketmaster events...',true);try{tallies.tm=await fetchTicketmaster();}catch(e){console.error(e);}updateTallies();
-  setStatus('Fetching PredictHQ events...',true);try{tallies.phq=await fetchPredictHQ();}catch(e){console.error(e);}updateTallies();
-  setStatus('Running AI search for conventions & additional events...',true);try{tallies.ai=await fetchAIEvents();}catch(e){console.error(e);}updateTallies();
+  let allNew=[];
+
+  setStatus('Fetching Ticketmaster events...',true);
+  try{const r=await fetchTicketmaster();allNew.push(...r);tallies.tm=r.length;}catch(e){console.error(e);}updateTallies();
+
+  setStatus('Fetching PredictHQ events...',true);
+  try{const r=await fetchPredictHQ();allNew.push(...r);tallies.phq=r.length;}catch(e){console.error(e);}updateTallies();
+
+  setStatus('Running AI search for conventions & additional events...',true);
+  try{const r=await fetchAIEvents();allNew.push(...r);tallies.ai=r.length;}catch(e){console.error(e);}updateTallies();
+
+  if(allNew.length){
+    setStatus('Saving '+allNew.length+' events to shared database...',true);
+    await saveManyToSupabase(allNew);
+    events.push(...allNew);
+  }
+
   renderCal();btn.disabled=false;btn.textContent='↓ Fetch Events';
   const total=tallies.eb+tallies.tm+tallies.phq+tallies.ai;
-  setStatus(total>0?`Loaded ${total} events for ${MONTHS[curMonth]} ${curYear} — ${tallies.eb} Eventbrite · ${tallies.tm} Ticketmaster · ${tallies.phq} PredictHQ · ${tallies.ai} AI Search`:'No new events found — try another month or add events manually.',false);
+  setStatus(total>0?`Loaded ${total} new events for ${MONTHS[curMonth]} ${curYear} — synced to shared calendar`:'No new events found — try another month or add events manually.',false);
 }
-renderCal();
-fetchAllEvents();
+
+// ── INIT ──
+async function init(){
+  renderCal();
+  setStatus('Loading shared calendar...',true);
+  const loaded = await loadFromSupabase();
+  if(loaded){
+    renderCal();
+    const count=events.length;
+    setStatus(count>0?`Loaded ${count} events from shared calendar — click "Fetch Events" to refresh`:'Shared calendar is empty — click "Fetch Events" to load Tulsa events.',false);
+  } else {
+    setStatus('Could not connect to shared database. Click "Fetch Events" to try loading events.',false);
+  }
+}
+
+init();
 </script>
 </body>
 </html>
