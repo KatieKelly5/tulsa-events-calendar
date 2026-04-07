@@ -326,6 +326,7 @@ async function fetchAllEvents(){
   setStatus(total>0?`Loaded ${total} events for ${MONTHS[curMonth]} ${curYear} — ${tallies.eb} Eventbrite · ${tallies.tm} Ticketmaster · ${tallies.phq} PredictHQ · ${tallies.ai} AI Search`:'No new events found — try another month or add events manually.',false);
 }
 renderCal();
+fetchAllEvents();
 </script>
 </body>
 </html>
