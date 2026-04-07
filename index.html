@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tulsa Events — Restaurant Group Calendar</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --cream: #F5F0E8;
+    --ink: #1A1612;
+    --rust: #C4552A;
+    --rust-light: #F0E0D6;
+    --rust-dark: #8C3A1C;
+    --gold: #C9922A;
+    --gold-light: #F5E8CE;
+    --sage: #4A6741;
+    --sage-light: #DDE8D8;
+    --blue: #2A4C7A;
+    --blue-light: #D6E2F0;
+    --muted: #7A6F65;
+    --border: rgba(26,22,18,0.12);
+    --border-strong: rgba(26,22,18,0.25);
+    --shadow: 0 2px 12px rgba(26,22,18,0.08);
+    --shadow-lg: 0 8px 32px rgba(26,22,18,0.14);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  .site-header {
+    background: var(--ink);
+    padding: 1.25rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .site-logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    color: var(--cream);
+    letter-spacing: -0.01em;
+  }
+  .site-logo span { color: var(--gold); }
+  .site-tagline { font-size: 12px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; margin-top: 2px; }
+
+  .header-actions { display: flex; align-items: center; gap: 10px; }
+  .btn {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 8px 18px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+    letter-spacing: 0.01em;
+  }
+  .btn-ghost { background: transparent; border: 1px solid rgba(245,240,232,0.25); color: var(--cream); }
+  .btn-ghost:hover { background: rgba(245,240,232,0.1); }
+  .btn-primary { background: var(--rust); color: var(--cream); }
+  .btn-primary:hover { background: var(--rust-dark); }
+  .btn-primary:disabled { opacity: 0.55; cursor: default; }
+  .btn-gold { background: var(--gold); color: var(--ink); }
+  .btn-gold:hover { background: #B07E20; }
+
+  /* ── CONTROLS BAR ── */
+  .controls {
+    background: white;
+    border-bottom: 1px solid var(--border);
+    padding: 0.875rem 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    box-shadow: var(--shadow);
+  }
+  .month-nav { display: flex; align-items: center; gap: 10px; }
+  .nav-arrow {
+    width: 32px; height: 32px;
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    background: transparent;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    color: var(--ink);
+    transition: all 0.15s;
+  }
+  .nav-arrow:hover { background: var(--cream); }
+  .month-display {
+    font-family: 'DM Serif Display', serif;
+    font-size: 20px;
+    min-width: 180px;
+    text-align: center;
+    color: var(--ink);
+  }
+  .today-btn {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    padding: 5px 12px;
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    background: transparent;
+    cursor: pointer;
+    color: var(--muted);
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+  .today-btn:hover { background: var(--cream); color: var(--ink); }
+
+  .filters { display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto; }
+  .chip {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 13px;
+    border-radius: 20px;
+    border: 1px solid var(--border-strong);
+    background: transparent;
+    cursor: pointer;
+    color: var(--muted);
+    transition: all 0.15s;
+    letter-spacing: 0.02em;
+  }
+  .chip:hover { border-color: var(--ink); color: var(--ink); }
+  .chip.active-all { background: var(--ink); color: var(--cream); border-color: var(--ink); }
+  .chip.active-food { background: var(--rust); color: var(--cream); border-color: var(--rust); }
+  .chip.active-arts { background: var(--blue); color: var(--cream); border-color: var(--blue); }
+  .chip.active-sports { background: var(--sage); color: var(--cream); border-color: var(--sage); }
+  .chip.active-mine { background: var(--gold); color: var(--ink); border-color: var(--gold); }
+
+  /* ── CALENDAR GRID ── */
+  .cal-wrap { padding: 1.5rem 2rem 2rem; max-width: 1200px; margin: 0 auto; }
+  .day-labels {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin-bottom: 6px;
+  }
+  .day-label {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 4px 0;
+  }
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+  .day-cell {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    min-height: 110px;
+    padding: 8px;
+    cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    position: relative;
+  }
+  .day-cell:hover { border-color: var(--border-strong); box-shadow: var(--shadow); }
+  .day-cell.other-month { background: rgba(245,240,232,0.5); opacity: 0.6; }
+  .day-cell.is-today { border-color: var(--rust); border-width: 2px; }
+  .day-cell.is-weekend { background: #FDFBF7; }
+
+  .day-num {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .day-cell.is-today .day-num .num-inner {
+    background: var(--rust);
+    color: white;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+  }
+  .has-events-dot {
+    width: 5px; height: 5px;
+    background: var(--gold);
+    border-radius: 50%;
+    display: none;
+  }
+
+  .evt-pill {
+    font-size: 10px;
+    font-weight: 500;
+    padding: 3px 7px;
+    border-radius: 4px;
+    margin-bottom: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    transition: opacity 0.1s;
+    display: block;
+    line-height: 1.4;
+  }
+  .evt-pill:hover { opacity: 0.8; }
+  .pill-mine { background: var(--gold-light); color: #7A5510; }
+  .pill-food { background: var(--rust-light); color: var(--rust-dark); }
+  .pill-arts { background: var(--blue-light); color: var(--blue); }
+  .pill-sports { background: var(--sage-light); color: var(--sage); }
+  .pill-community { background: #EDE8E0; color: #4A3F35; }
+
+  .more-link {
+    font-size: 10px;
+    color: var(--muted);
+    font-weight: 500;
+    cursor: pointer;
+    padding: 1px 4px;
+  }
+  .more-link:hover { color: var(--ink); }
+
+  /* ── STATUS BAR ── */
+  .status-bar {
+    background: white;
+    border-top: 1px solid var(--border);
+    padding: 0.625rem 2rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    color: var(--muted);
+    min-height: 38px;
+    position: sticky;
+    bottom: 0;
+  }
+  .spinner {
+    width: 13px; height: 13px;
+    border: 2px solid var(--border);
+    border-top-color: var(--rust);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .legend { display: flex; gap: 14px; margin-left: auto; flex-wrap: wrap; }
+  .leg { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); font-weight: 500; }
+  .leg-dot { width: 9px; height: 9px; border-radius: 3px; }
+
+  /* ── MODAL BASE ── */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(26,22,18,0.5);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 200;
+    padding: 1rem;
+  }
+  .modal-box {
+    background: var(--cream);
+    border-radius: 12px;
+    width: 460px;
+    max-width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border);
+  }
+  .modal-head {
+    padding: 1.25rem 1.5rem 1rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .modal-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 20px;
+  }
+  .modal-close {
+    width: 30px; height: 30px;
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    background: transparent;
+    cursor: pointer;
+    font-size: 16px;
+    color: var(--muted);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .modal-close:hover { background: white; color: var(--ink); }
+  .modal-body { padding: 1.25rem 1.5rem; }
+  .modal-foot { padding: 1rem 1.5rem; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; }
+
+  .field { margin-bottom: 1rem; }
+  .field label { display: block; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); margin-bottom: 5px; }
+  .field input, .field select, .field textarea {
+    width: 100%;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    padding: 9px 12px;
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    background: white;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--rust); }
+  .field textarea { min-height: 80px; resize: vertical; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* ── EVENT DETAIL MODAL ── */
+  .detail-tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 20px;
+    margin-bottom: 10px;
+  }
+  .detail-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    line-height: 1.2;
+    margin-bottom: 8px;
+  }
+  .detail-meta {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 5px;
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+  }
+  .detail-meta svg { flex-shrink: 0; margin-top: 1px; }
+  .detail-notes {
+    font-size: 14px;
+    line-height: 1.6;
+    margin-top: 14px;
+    color: var(--ink);
+    border-top: 1px solid var(--border);
+    padding-top: 14px;
+  }
+  .detail-link {
+    display: inline-block;
+    margin-top: 12px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--rust);
+    text-decoration: none;
+  }
+  .detail-link:hover { text-decoration: underline; }
+  .btn-danger { background: transparent; border: 1px solid #C0392B; color: #C0392B; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; padding: 7px 14px; border-radius: 6px; cursor: pointer; }
+  .btn-danger:hover { background: #FDECEA; }
+
+  /* ── SOURCE BADGES ── */
+  .source-badge {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+  .badge-eb { background: #FF6A3C; color: white; }
+  .badge-tm { background: #026CDF; color: white; }
+  .badge-mine { background: var(--gold); color: var(--ink); }
+
+  @media (max-width: 640px) {
+    .controls { padding: 0.75rem 1rem; }
+    .cal-wrap { padding: 1rem; }
+    .site-header { padding: 1rem; }
+    .status-bar { padding: 0.5rem 1rem; }
+    .day-cell { min-height: 70px; }
+    .legend { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div>
+    <div class="site-logo">Tulsa <span>Events</span></div>
+    <div class="site-tagline">Restaurant Group Community Calendar</div>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-ghost" onclick="openAddModal()">+ Add Event</button>
+    <button class="btn btn-primary" id="fetchBtn" onclick="fetchAllEvents()">&#8595; Fetch Events</button>
+  </div>
+</header>
+
+<div class="controls">
+  <div class="month-nav">
+    <button class="nav-arrow" onclick="changeMonth(-1)">&#8249;</button>
+    <div class="month-display" id="monthDisplay"></div>
+    <button class="nav-arrow" onclick="changeMonth(1)">&#8250;</button>
+    <button class="today-btn" onclick="goToday()">Today</button>
+  </div>
+  <div class="filters">
+    <button class="chip active-all" data-f="all" onclick="setFilter('all',this)">All</button>
+    <button class="chip" data-f="food" onclick="setFilter('food',this)">Food & Drink</button>
+    <button class="chip" data-f="arts" onclick="setFilter('arts',this)">Arts & Music</button>
+    <button class="chip" data-f="sports" onclick="setFilter('sports',this)">Sports</button>
+    <button class="chip" data-f="mine" onclick="setFilter('mine',this)">My Events</button>
+  </div>
+</div>
+
+<div class="cal-wrap">
+  <div class="day-labels">
+    <div class="day-label">Sun</div><div class="day-label">Mon</div><div class="day-label">Tue</div>
+    <div class="day-label">Wed</div><div class="day-label">Thu</div><div class="day-label">Fri</div><div class="day-label">Sat</div>
+  </div>
+  <div class="cal-grid" id="calGrid"></div>
+</div>
+
+<div class="status-bar">
+  <span id="statusMsg">Ready — click "Fetch Events" to load Eventbrite &amp; Ticketmaster events for Tulsa.</span>
+  <div id="spinner" class="spinner" style="display:none"></div>
+  <div class="legend">
+    <div class="leg"><div class="leg-dot" style="background:#C4552A"></div>Food & Drink</div>
+    <div class="leg"><div class="leg-dot" style="background:#2A4C7A"></div>Arts & Music</div>
+    <div class="leg"><div class="leg-dot" style="background:#4A6741"></div>Sports</div>
+    <div class="leg"><div class="leg-dot" style="background:#C9922A"></div>My Events</div>
+    <div class="leg"><div class="leg-dot" style="background:#8A7F75"></div>Community</div>
+  </div>
+</div>
+
+<!-- ADD EVENT MODAL -->
+<div class="modal-overlay" id="addModal" style="display:none" onclick="if(event.target===this)closeAddModal()">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div class="modal-title">Add Event</div>
+      <button class="modal-close" onclick="closeAddModal()">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Event name</label>
+        <input type="text" id="addName" placeholder="e.g. Blues on Brady Night" />
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Date</label>
+          <input type="date" id="addDate" />
+        </div>
+        <div class="field">
+          <label>Time</label>
+          <input type="time" id="addTime" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Category</label>
+        <select id="addCat">
+          <option value="mine">My Event</option>
+          <option value="food">Food & Drink</option>
+          <option value="arts">Arts & Music</option>
+          <option value="sports">Sports</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Venue / Location</label>
+        <input type="text" id="addLoc" placeholder="e.g. Cain's Ballroom, Tulsa OK" />
+      </div>
+      <div class="field">
+        <label>Notes</label>
+        <textarea id="addNotes" placeholder="Details, ticket links, reminders for the team..."></textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" style="color:var(--ink);border-color:var(--border-strong)" onclick="closeAddModal()">Cancel</button>
+      <button class="btn btn-gold" onclick="saveEvent()">Save Event</button>
+    </div>
+  </div>
+</div>
+
+<!-- EVENT DETAIL MODAL -->
+<div class="modal-overlay" id="detailModal" style="display:none" onclick="if(event.target===this)closeDetail()">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div class="modal-title">Event Details</div>
+      <button class="modal-close" onclick="closeDetail()">&#10005;</button>
+    </div>
+    <div class="modal-body" id="detailBody"></div>
+    <div class="modal-foot" id="detailFoot"></div>
+  </div>
+</div>
+
+<script>
+const EB_KEY = 'MWSGIEOMO6J3JR5CHZ6G';
+const TM_KEY = 'BlTjhuTQB49rAti4GdPq81YK4CJQGYiH';
+const CORS  = 'https://corsproxy.io/?';
+
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const today  = new Date();
+let curYear  = today.getFullYear();
+let curMonth = today.getMonth();
+let activeFilter = 'all';
+let activeDetailId = null;
+
+function fmtDate(d) {
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function uid() { return '_' + Math.random().toString(36).slice(2,10); }
+
+// ── EVENTS STORE ──
+let events = [];
+
+// ── CATEGORY HELPERS ──
+function pillClass(cat) {
+  return { mine:'pill-mine', food:'pill-food', arts:'pill-arts', sports:'pill-sports' }[cat] || 'pill-community';
+}
+function tagStyle(cat) {
+  const m = {
+    mine:   'background:var(--gold-light);color:#7A5510',
+    food:   'background:var(--rust-light);color:var(--rust-dark)',
+    arts:   'background:var(--blue-light);color:var(--blue)',
+    sports: 'background:var(--sage-light);color:var(--sage)',
+  };
+  return m[cat] || 'background:#EDE8E0;color:#4A3F35';
+}
+function catLabel(cat) {
+  return { mine:'My Event', food:'Food & Drink', arts:'Arts & Music', sports:'Sports', community:'Community' }[cat] || 'Event';
+}
+
+// ── FILTER ──
+function setFilter(f, el) {
+  activeFilter = f;
+  document.querySelectorAll('.chip').forEach(c => {
+    c.className = 'chip';
+    if (c.dataset.f === f) c.classList.add('active-' + (f==='all'?'all':f==='mine'?'mine':f));
+  });
+  renderCal();
+}
+
+function visibleEvts(ds) {
+  return events.filter(e => {
+    if (e.date !== ds) return false;
+    if (activeFilter === 'all') return true;
+    if (activeFilter === 'mine') return ['mine','food','arts','sports'].includes(e.cat);
+    return e.cat === activeFilter;
+  });
+}
+
+// ── NAVIGATION ──
+function changeMonth(d) {
+  curMonth += d;
+  if (curMonth > 11) { curMonth = 0; curYear++; }
+  if (curMonth < 0)  { curMonth = 11; curYear--; }
+  renderCal();
+}
+function goToday() {
+  curYear = today.getFullYear();
+  curMonth = today.getMonth();
+  renderCal();
+}
+
+// ── RENDER ──
+function renderCal() {
+  document.getElementById('monthDisplay').textContent = MONTHS[curMonth] + ' ' + curYear;
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+
+  const first    = new Date(curYear, curMonth, 1);
+  const last     = new Date(curYear, curMonth+1, 0);
+  const startDay = first.getDay();
+  const todayStr = fmtDate(today);
+
+  for (let i = 0; i < startDay; i++) {
+    const d = new Date(curYear, curMonth, -startDay+i+1);
+    grid.appendChild(makeCell(d, true, todayStr));
+  }
+  for (let d = 1; d <= last.getDate(); d++) {
+    grid.appendChild(makeCell(new Date(curYear, curMonth, d), false, todayStr));
+  }
+  const rem = 42 - (startDay + last.getDate());
+  for (let i = 1; i <= rem; i++) {
+    grid.appendChild(makeCell(new Date(curYear, curMonth+1, i), true, todayStr));
+  }
+}
+
+function makeCell(dt, other, todayStr) {
+  const ds   = fmtDate(dt);
+  const evts = visibleEvts(ds);
+  const isTd = ds === todayStr;
+  const isWe = dt.getDay() === 0 || dt.getDay() === 6;
+
+  const cell = document.createElement('div');
+  cell.className = 'day-cell' + (other?' other-month':'') + (isTd?' is-today':'') + (isWe?' is-weekend':'');
+  cell.onclick = e => { if (e.target === cell || e.target.classList.contains('day-num') || e.target.classList.contains('num-inner')) openAddModal(ds); };
+
+  const numDiv = document.createElement('div');
+  numDiv.className = 'day-num';
+  if (isTd) {
+    const s = document.createElement('span');
+    s.className = 'num-inner';
+    s.textContent = dt.getDate();
+    numDiv.appendChild(s);
+  } else {
+    numDiv.textContent = dt.getDate();
+  }
+  cell.appendChild(numDiv);
+
+  const MAX = 3;
+  evts.slice(0, MAX).forEach(ev => {
+    const pill = document.createElement('div');
+    pill.className = 'evt-pill ' + pillClass(ev.cat);
+    const t = ev.time ? ev.time.slice(0,5) + ' ' : '';
+    pill.textContent = t + ev.name;
+    pill.title = ev.name;
+    pill.onclick = e => { e.stopPropagation(); openDetail(ev.id); };
+    cell.appendChild(pill);
+  });
+  if (evts.length > MAX) {
+    const m = document.createElement('div');
+    m.className = 'more-link';
+    m.textContent = '+' + (evts.length - MAX) + ' more';
+    m.onclick = e => { e.stopPropagation(); openAddModal(ds); };
+    cell.appendChild(m);
+  }
+  return cell;
+}
+
+// ── STATUS ──
+function setStatus(msg, loading) {
+  document.getElementById('statusMsg').textContent = msg;
+  document.getElementById('spinner').style.display = loading ? 'block' : 'none';
+}
+
+// ── ADD MODAL ──
+function openAddModal(prefill) {
+  document.getElementById('addName').value  = '';
+  document.getElementById('addDate').value  = prefill || fmtDate(today);
+  document.getElementById('addTime').value  = '';
+  document.getElementById('addCat').value   = 'mine';
+  document.getElementById('addLoc').value   = '';
+  document.getElementById('addNotes').value = '';
+  document.getElementById('addModal').style.display = 'flex';
+}
+function closeAddModal() { document.getElementById('addModal').style.display = 'none'; }
+
+function saveEvent() {
+  const name = document.getElementById('addName').value.trim();
+  const date = document.getElementById('addDate').value;
+  if (!name || !date) { alert('Please enter an event name and date.'); return; }
+  events.push({
+    id:     uid(),
+    name,
+    date,
+    time:   document.getElementById('addTime').value,
+    cat:    document.getElementById('addCat').value,
+    loc:    document.getElementById('addLoc').value.trim(),
+    notes:  document.getElementById('addNotes').value.trim(),
+    source: 'mine',
+    url:    ''
+  });
+  closeAddModal();
+  renderCal();
+  setStatus('Event added: ' + name, false);
+}
+
+// ── DETAIL MODAL ──
+function openDetail(id) {
+  const ev = events.find(e => e.id === id);
+  if (!ev) return;
+  activeDetailId = id;
+
+  const dateObj = new Date(ev.date + 'T12:00:00');
+  const dateStr = dateObj.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
+  const timeStr = ev.time ? ' · ' + formatTime(ev.time) : '';
+
+  const sourceBadge = ev.source === 'eventbrite' ? '<span class="source-badge badge-eb">Eventbrite</span>'
+    : ev.source === 'ticketmaster' ? '<span class="source-badge badge-tm">Ticketmaster</span>'
+    : '<span class="source-badge badge-mine">My Event</span>';
+
+  document.getElementById('detailBody').innerHTML = `
+    <div>
+      <span class="detail-tag" style="${tagStyle(ev.cat)}">${catLabel(ev.cat)}</span>
+      ${sourceBadge}
+    </div>
+    <div class="detail-title">${ev.name}</div>
+    <div class="detail-meta">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      ${dateStr}${timeStr}
+    </div>
+    ${ev.loc ? `<div class="detail-meta"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7c0 5.25-7 13-7 13S5 14.25 5 9a7 7 0 0 1 7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>${ev.loc}</div>` : ''}
+    ${ev.notes ? `<div class="detail-notes">${ev.notes}</div>` : ''}
+    ${ev.url ? `<a href="${ev.url}" target="_blank" class="detail-link">View on ${ev.source === 'ticketmaster' ? 'Ticketmaster' : 'Eventbrite'} &#8599;</a>` : ''}
+  `;
+
+  const isOwned = ['mine','food','arts','sports'].includes(ev.cat) && ev.source === 'mine';
+  document.getElementById('detailFoot').innerHTML = isOwned
+    ? `<button class="btn-danger" onclick="deleteEvt()">Remove Event</button><button class="btn btn-ghost" style="color:var(--ink);border-color:var(--border-strong);margin-left:auto" onclick="closeDetail()">Close</button>`
+    : `<button class="btn btn-ghost" style="color:var(--ink);border-color:var(--border-strong);margin-left:auto" onclick="closeDetail()">Close</button>`;
+
+  document.getElementById('detailModal').style.display = 'flex';
+}
+function closeDetail() { document.getElementById('detailModal').style.display = 'none'; activeDetailId = null; }
+function deleteEvt() {
+  if (!activeDetailId) return;
+  events = events.filter(e => e.id !== activeDetailId);
+  closeDetail();
+  renderCal();
+}
+
+function formatTime(t) {
+  if (!t) return '';
+  const [h, m] = t.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12  = h % 12 || 12;
+  return h12 + ':' + String(m).padStart(2,'0') + ' ' + ampm;
+}
+
+// ── CATEGORY GUESSER ──
+function guessCategory(name, desc) {
+  const txt = (name + ' ' + (desc || '')).toLowerCase();
+  if (/food|dine|dinner|lunch|brunch|eat|culinary|chef|cook|tast|wine|beer|brew|cocktail|bar|restaurant|bistro|cafe|pizza|bbq|grill|farm.market|farmers/i.test(txt)) return 'food';
+  if (/concert|music|band|jazz|blues|rock|country|rap|hip.hop|show|perform|theatre|theater|comedy|standup|art|galler|exhibit|danc|ballet|opera|film|movie/i.test(txt)) return 'arts';
+  if (/sport|game|match|tournament|race|run|marathon|5k|walk|hike|outdoor|drill|thunder|soccer|football|baseball|basket|hockey|tennis|golf|rodeo/i.test(txt)) return 'sports';
+  return 'community';
+}
+
+// ── FETCH EVENTBRITE ──
+async function fetchEventbrite() {
+  const startDate = new Date(curYear, curMonth, 1).toISOString().replace('.000','');
+  const endDate   = new Date(curYear, curMonth+1, 0, 23, 59).toISOString().replace('.000','');
+
+  const url = `https://www.eventbriteapi.com/v3/events/search/?location.address=Tulsa%2C%20OK&location.within=30mi&start_date.range_start=${startDate}&start_date.range_end=${endDate}&expand=venue&page_size=50&token=${EB_KEY}`;
+
+  const res  = await fetch(CORS + encodeURIComponent(url));
+  const data = await res.json();
+
+  if (!data.events) return 0;
+
+  let added = 0;
+  data.events.forEach(ev => {
+    const dt   = ev.start && ev.start.local ? ev.start.local : '';
+    const date = dt ? dt.slice(0,10) : '';
+    const time = dt ? dt.slice(11,16) : '';
+    if (!date) return;
+
+    const dupe = events.find(e => e.name.toLowerCase() === ev.name.html.toLowerCase() && e.date === date);
+    if (dupe) return;
+
+    const venueName = ev.venue ? (ev.venue.name || ev.venue.address?.localized_address_display || '') : 'Tulsa, OK';
+
+    events.push({
+      id:     uid(),
+      name:   ev.name.text || ev.name.html,
+      date,
+      time,
+      cat:    guessCategory(ev.name.text, ev.description?.text),
+      loc:    venueName,
+      notes:  ev.description?.text ? ev.description.text.slice(0, 300) : '',
+      source: 'eventbrite',
+      url:    ev.url || ''
+    });
+    added++;
+  });
+  return added;
+}
+
+// ── FETCH TICKETMASTER ──
+async function fetchTicketmaster() {
+  const startDate = new Date(curYear, curMonth, 1).toISOString().slice(0,19) + 'Z';
+  const endDate   = new Date(curYear, curMonth+1, 0, 23, 59).toISOString().slice(0,19) + 'Z';
+
+  const url = `https://app.ticketmaster.com/discovery/v2/events.json?city=Tulsa&stateCode=OK&startDateTime=${startDate}&endDateTime=${endDate}&size=50&apikey=${TM_KEY}`;
+
+  const res  = await fetch(CORS + encodeURIComponent(url));
+  const data = await res.json();
+
+  const evts = data._embedded?.events;
+  if (!evts) return 0;
+
+  let added = 0;
+  evts.forEach(ev => {
+    const dateInfo = ev.dates?.start;
+    const date = dateInfo?.localDate || '';
+    const time = dateInfo?.localTime ? dateInfo.localTime.slice(0,5) : '';
+    if (!date) return;
+
+    const dupe = events.find(e => e.name.toLowerCase() === ev.name.toLowerCase() && e.date === date);
+    if (dupe) return;
+
+    const venue = ev._embedded?.venues?.[0];
+    const loc   = venue ? venue.name + (venue.city?.name ? ', ' + venue.city.name : '') : 'Tulsa, OK';
+    const url   = ev.url || '';
+    const seg   = ev.classifications?.[0]?.segment?.name?.toLowerCase() || '';
+    let cat = 'community';
+    if (seg === 'music') cat = 'arts';
+    else if (seg === 'sports') cat = 'sports';
+    else cat = guessCategory(ev.name, '');
+
+    events.push({ id: uid(), name: ev.name, date, time, cat, loc, notes: '', source: 'ticketmaster', url });
+    added++;
+  });
+  return added;
+}
+
+// ── FETCH ALL ──
+async function fetchAllEvents() {
+  const btn = document.getElementById('fetchBtn');
+  btn.disabled = true;
+  btn.textContent = 'Fetching...';
+
+  setStatus('Fetching Eventbrite events for ' + MONTHS[curMonth] + ' ' + curYear + '...', true);
+  let ebCount = 0, tmCount = 0;
+
+  try {
+    ebCount = await fetchEventbrite();
+  } catch(e) {
+    console.error('Eventbrite error:', e);
+  }
+
+  setStatus('Fetching Ticketmaster events...', true);
+  try {
+    tmCount = await fetchTicketmaster();
+  } catch(e) {
+    console.error('Ticketmaster error:', e);
+  }
+
+  renderCal();
+  btn.disabled = false;
+  btn.textContent = '↓ Fetch Events';
+
+  const total = ebCount + tmCount;
+  if (total === 0) {
+    setStatus('No new events found for this month — try a different month or add events manually.', false);
+  } else {
+    setStatus(`Loaded ${ebCount} Eventbrite + ${tmCount} Ticketmaster events for ${MONTHS[curMonth]} ${curYear}.`, false);
+  }
+}
+
+renderCal();
+</script>
+</body>
+</html>
