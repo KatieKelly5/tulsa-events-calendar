@@ -91,8 +91,20 @@
   .pill-sports    { background: var(--steel-light); color: var(--steel); }
   .pill-conv      { background: var(--blue-light);  color: var(--blue); }
   .pill-community { background: var(--gray-light);  color: #334155; }
-  .more-link { font-size: 10px; color: var(--muted); font-weight: 500; cursor: pointer; padding: 1px 4px; }
-  .more-link:hover { color: var(--ink); }
+  .more-link { font-size: 10px; color: var(--teal); font-weight: 600; cursor: pointer; padding: 1px 4px; }
+  .more-link:hover { text-decoration: underline; }
+
+  .day-modal-box { background: white; border-radius: 12px; width: 500px; max-width: 100%; max-height: 80vh; overflow-y: auto; box-shadow: var(--shadow-lg); border: 1px solid var(--border); }
+  .day-modal-head { padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--ink); border-radius: 12px 12px 0 0; position: sticky; top: 0; }
+  .day-modal-title { font-family: 'DM Serif Display', serif; font-size: 18px; color: white; }
+  .day-evt-list { padding: 0.75rem 1rem; }
+  .day-evt-row { display: flex; align-items: flex-start; gap: 12px; padding: 10px 8px; border-bottom: 1px solid var(--border); cursor: pointer; border-radius: 6px; transition: background 0.1s; }
+  .day-evt-row:hover { background: var(--cream); }
+  .day-evt-row:last-child { border-bottom: none; }
+  .day-evt-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; margin-top: 4px; }
+  .day-evt-info { flex: 1; min-width: 0; }
+  .day-evt-name { font-size: 13px; font-weight: 500; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .day-evt-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
 
   .status-bar { background: white; border-top: 1px solid var(--border); padding: 0.625rem 2rem; display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--muted); min-height: 38px; width: 100%; flex-wrap: wrap; position: sticky; bottom: 0; }
   .spinner { width: 13px; height: 13px; border: 2px solid var(--border); border-top-color: var(--teal); border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
@@ -215,6 +227,16 @@
       <div class="field"><label>Notes / Promo ideas</label><textarea id="addNotes" placeholder="Special menu ideas, target demographic, promo opportunities..."></textarea></div>
     </div>
     <div class="modal-foot"><button class="btn btn-ghost-dark" onclick="closeAddModal()">Cancel</button><button class="btn btn-gold" onclick="saveEvent()">Save Event</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="dayModal" style="display:none" onclick="if(event.target===this)closeDayModal()">
+  <div class="day-modal-box">
+    <div class="day-modal-head">
+      <div class="day-modal-title" id="dayModalTitle"></div>
+      <button class="modal-close" onclick="closeDayModal()">&#10005;</button>
+    </div>
+    <div class="day-evt-list" id="dayEvtList"></div>
   </div>
 </div>
 
@@ -358,13 +380,32 @@ function makeCell(dt,other,ts){
   if(hiTr){const dot=document.createElement('span');dot.className='traffic-dot';dot.textContent='busy';nd.appendChild(dot);}
   cell.appendChild(nd);
   evts.slice(0,3).forEach(ev=>{const p=document.createElement('div');p.className='evt-pill '+pillClass(ev.cat);p.textContent=(ev.time?ev.time.slice(0,5)+' ':'')+ev.name;p.title=ev.name+(ev.loc?' @ '+ev.loc:'');p.onclick=e=>{e.stopPropagation();openDetail(ev.id);};cell.appendChild(p);});
-  if(evts.length>3){const m=document.createElement('div');m.className='more-link';m.textContent='+'+(evts.length-3)+' more';m.onclick=e=>{e.stopPropagation();openDetail(evts[3].id);};cell.appendChild(m);}
+  if(evts.length>3){const m=document.createElement('div');m.className='more-link';m.textContent='+'+(evts.length-3)+' more';m.onclick=e=>{e.stopPropagation();openDayModal(ds);};cell.appendChild(m);}
   return cell;
 }
 
 // ── STATUS ──
 function setStatus(m,l){document.getElementById('statusMsg').textContent=m;document.getElementById('spinner').style.display=l?'block':'none';}
 function updateTallies(){document.getElementById('tallyEB').textContent=tallies.eb;document.getElementById('tallyTM').textContent=tallies.tm;document.getElementById('tallyPHQ').textContent=tallies.phq;document.getElementById('tallyAI').textContent=tallies.ai;}
+
+function closeDayModal(){document.getElementById('dayModal').style.display='none';}
+function openDayModal(ds){
+  const dateObj=new Date(ds+'T12:00:00');
+  const dateStr=dateObj.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  const dayEvts=events.filter(e=>e.date===ds);
+  document.getElementById('dayModalTitle').textContent=dateStr+' — '+dayEvts.length+' events';
+  const dotColors={mine:'#C9922A',food:'#C9922A',arts:'#0D9488',sports:'#2A6496',conv:'#1E3A5F',community:'#64748B'};
+  document.getElementById('dayEvtList').innerHTML=dayEvts.length===0?'<p style="padding:1rem;color:var(--muted);font-size:13px">No events this day.</p>':dayEvts.map(ev=>`
+    <div class="day-evt-row" onclick="closeDayModal();setTimeout(()=>openDetail('${ev.id}'),100)">
+      <div class="day-evt-dot" style="background:${dotColors[ev.cat]||'#64748B'}"></div>
+      <div class="day-evt-info">
+        <div class="day-evt-name">${ev.name}</div>
+        <div class="day-evt-meta">${ev.time?formatTime(ev.time)+' · ':''}${ev.loc||''}${ev.attendance>=100?' · Est. '+Number(ev.attendance).toLocaleString()+' attendees':''}</div>
+      </div>
+    </div>
+  `).join('');
+  document.getElementById('dayModal').style.display='flex';
+}
 
 // ── ADD MODAL ──
 function openAddModal(pre){
