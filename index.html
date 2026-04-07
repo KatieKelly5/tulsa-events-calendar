@@ -379,7 +379,7 @@ function makeCell(dt,other,ts){
   const ns=document.createElement('span');ns.className=isTd?'num-inner':'';ns.textContent=dt.getDate();nd.appendChild(ns);
   if(hiTr){const dot=document.createElement('span');dot.className='traffic-dot';dot.textContent='busy';nd.appendChild(dot);}
   cell.appendChild(nd);
-  evts.slice(0,3).forEach(ev=>{const p=document.createElement('div');p.className='evt-pill '+pillClass(ev.cat);p.textContent=(ev.time?ev.time.slice(0,5)+' ':'')+ev.name;p.title=ev.name+(ev.loc?' @ '+ev.loc:'');p.onclick=e=>{e.stopPropagation();openDetail(ev.id);};cell.appendChild(p);});
+  evts.slice(0,3).forEach(ev=>{const p=document.createElement('div');p.className='evt-pill '+pillClass(ev.cat);p.textContent=(ev.time?formatTime(ev.time)+' ':'')+ev.name;p.title=ev.name+(ev.loc?' @ '+ev.loc:'');p.onclick=e=>{e.stopPropagation();openDetail(ev.id);};cell.appendChild(p);});
   if(evts.length>3){const m=document.createElement('div');m.className='more-link';m.textContent='+'+(evts.length-3)+' more';m.onclick=e=>{e.stopPropagation();openDayModal(ds);};cell.appendChild(m);}
   return cell;
 }
